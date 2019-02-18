@@ -29,9 +29,9 @@ Keys.checkBuffered = function (key) {
 };
 
 Keys.update = function () {
-    if (Math4D.cam.transxz < 1 && Keys.checkPress("e")) {
+    if (Math4D.cam.transxz < 1 && Keys.checkPressed("e")) {
         Math4D.cam.transxz = 1;
-    } else if (Math4D.cam.transxz > -1 && Keys.checkPress("q")) {
+    } else if (Math4D.cam.transxz > -1 && Keys.checkPressed("q")) {
         if (Math4D.cam.transxz === 0) {
             Math4D.cam.axz = 1;
             Math4D.rotate90xz(true);
@@ -39,9 +39,9 @@ Keys.update = function () {
         Math4D.cam.transxz = -1;
     }
     
-    if (Math4D.cam.transxzw < 1 && Keys.checkPress("1")) {
+    if (Math4D.cam.transxzw < 1 && Keys.checkPressed("1")) {
         Math4D.cam.transxzw = 1;
-    } else if (Math4D.cam.transxzw > -1 && Keys.checkPress("3")) {
+    } else if (Math4D.cam.transxzw > -1 && Keys.checkPressed("3")) {
         if (Math4D.cam.transxzw === 0) {
             Math4D.cam.axzw = 1;
             Math4D.rotate120xzw(true);
