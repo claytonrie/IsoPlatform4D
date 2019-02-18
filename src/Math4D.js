@@ -6,11 +6,11 @@ var Math4D = {K1: 0, K2: 0, K3: 0, Sxz: 0, Cxz: 0};
 // These store the rotation matrix information to reduce computational stress
 const SQRT3 = Math.sqrt(3);
 Math4D.generate3DRotMat = function (A) {
-	let Sxzw = Math.sin(A * 2 * Math.PI / 3),
+	let Sxzw = SQRT3 * Math.sin(A * 2 * Math.PI / 3),
         Cxzw = Math.cos(A * 2 * Math.PI / 3);
 	Math4D.K1 = (1 + 2 * Cxzw) / 3;
-    Math4D.K2 = (1 + SQRT3 * Sxzw - Cxzw) / 3;
-    Math4D.K3 = (1 - SQRT3 * Sxzw - Cxzw) / 3;
+    Math4D.K2 = (1 + Sxzw - Cxzw) / 3;
+    Math4D.K3 = (1 - Sxzw - Cxzw) / 3;
 };
 Math4D.generate2DRotMat = function (A) {
 	Math4D.Sxz = Math.sin(A * Math.PI / 2);
@@ -116,7 +116,23 @@ Math4D.generateCubeProj = function (dim) {
     list.push(Math4D.vertexRot3D(dim,  1, -1, -1));
     list.push(Math4D.vertexRot3D(dim,  1, -1,  1));
     return list;
-}
+};
+
+// Maps the w-depth of an object to an opacity via a smoothstep function;
+//     used to show objects of at position that are of a different 
+//     w-depth and thus non-interactable
+Math4D.depthToOp = function (w, sw) {
+	const endPoint = 5;
+    let X = ((Math.abs(w) - sw - PL_SZ) / (endPoint * coScale));
+	if (X <= 0) {
+    	return 1;
+    } else if (X >= 1) {
+    	return 0;
+    } else {
+    	return 1 - (3 * X * X - 2 * X * X * X);
+    }
+};
+
 
 // Updates the camera based on how much time has passed
 Math4D.DELTA_ANGLE = 2;
