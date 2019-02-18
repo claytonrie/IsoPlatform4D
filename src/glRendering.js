@@ -1,12 +1,13 @@
 
 const nearClip = 1, farClip = 1000;
 var width = 320, height = 240;
-var aspect = width / height; //window.innerWidth / window.innerHeight;
+var aspect = width / height;
 var glScene, glCamera, glRenderer, glRenderTarget, glComposer, glClock;
 var EDShaderPass;
 
 const foreLowerThresh = "0.01", foreUpperThresh = "0.1";
-THREE.EdgeDetect = {
+var CustomShade = {};
+CustomShade.EdgeDetect = {
 	uniforms: {
 		"tDiffuse": { value: null },
 		"tDepth": { value: null },
@@ -55,22 +56,12 @@ THREE.EdgeDetect = {
 			float t1  = getDepth( pos );
 			float tx2 = getDepth( pos + texel * vec2( 0,  1) );
 			float ty2 = getDepth( pos + texel * vec2( 1,  0) );
-			/*
-            float tu0 = getDepth( pos + texel * vec2( -1,  1 ) );
-			float td0 = getDepth( pos + texel * vec2( -1, -1 ) );
-			float tu2 = getDepth( pos + texel * vec2(  1, -1 ) );
-			float td2 = getDepth( pos + texel * vec2(  1,  1 ) );
-			float valU = ED(tu0, tu2, t1, sensitivity); 
-            float valD = ED(td0, td2, t1, sensitivity);  //*/
             
 			float valX = ED(tx0, tx2, t1, sensitivity); 
             float valY = ED(ty0, ty2, t1, sensitivity); 
 
 			float farDetect = clipEdge(ty0) * clipEdge(tx0) * clipEdge(t1) * clipEdge(tx2) * clipEdge(ty2);
             farDetect = pow(farDetect, 0.2);
-			//return clamp(length(vec4(valX, valY, valU, valD)), 0., 1.);
-			//return max(valX, max(valY, max(valU, valD)));
-			//return clamp(length(vec2(valX, valY)), 0., 1.);
 			return max(valX, valY) * farDetect;
         }
         
@@ -91,7 +82,6 @@ THREE.EdgeDetect = {
             
             
 			float sum = 0.;
-            //float count = 0.;
             for ( int i = -4; i <= 4; i += 1) {
             	for ( int j = -4; j <= 4; j += 1) {
                 	float len = length(vec2(i, j)) - 0.;
@@ -100,16 +90,12 @@ THREE.EdgeDetect = {
                     }
                     vec2 newLoc = vUv + texel * vec2(i, j);
                     float diff = smoothstep(depth - aDepth, depth + aDepth, 
-                    	getDepth(newLoc));
-                    //float lenSign = sign(float(i)) * sign(float(j));
-                    //radians(len * lenSign * 30.) + 
+                    	getDepth(newLoc)); 
                     float sine = sin(2. * iTime + radians(noise(newLoc) * 1.118) / 2. + 
                     	3. * 6.28 * newLoc.x) * sin(2. * iTime + 
                         radians(noise(newLoc + 0.1) * 1.118) / 2. + 3. * 6.28 * newLoc.y);
                 	sum += onEdge(vUv + texel * vec2(i, j), len + 1.) *
                         (diff * abs(sine) / len + (1. - diff) * exp(- len));
-                    //sum += 1. - diff;
-                    //count += 1.;
                 }
             }
             float trueEdge = onEdge(vUv, 1.);
@@ -118,7 +104,7 @@ THREE.EdgeDetect = {
 		}`
 };
 
-THREE.NormMat = new THREE.ShaderMaterial({
+CustomShade.NormalShader = new THREE.ShaderMaterial({
 	uniforms: {
 		"color": { value: new THREE.Vector3() },
 		"aVal":  { value: 1.0 },
@@ -131,7 +117,6 @@ THREE.NormMat = new THREE.ShaderMaterial({
         varying vec2 vUv;
         
 		void main() {
-			//vUv = (projectionMatrix * modelViewMatrix * vec4(position, 1.)).xy;
             vUv = uv;
             depth = (modelViewMatrix * vec4(position, 1.)).z;
 			gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
@@ -154,13 +139,14 @@ THREE.NormMat = new THREE.ShaderMaterial({
 		}`
 });
 
-THREE.LavaMat = new THREE.ShaderMaterial({
+CustomShade.LavaShader = new THREE.ShaderMaterial({
 	uniforms: {
 		"color": { value: new THREE.Vector3() },
 		"aVal":  { value: 1.0 },
 		"iTime":  { value: 0.0 },
 		"nearClip":  { value: nearClip },
-		"farClip":  { value: farClip }
+		"farClip":  { value: farClip },
+        "seed": { value: 0.0 }
 	},
 
 	vertexShader:
@@ -187,6 +173,7 @@ THREE.LavaMat = new THREE.ShaderMaterial({
     	`#include <packing>
 		uniform vec3 color;
 		uniform float aVal;
+		uniform float seed;
         uniform float iTime;
 		uniform float nearClip;
 		uniform float farClip;
@@ -200,9 +187,9 @@ THREE.LavaMat = new THREE.ShaderMaterial({
         
         vec3 multSpot(vec2 pos) {
         	vec3 posRand;
-            posRand.x = sin((noise(pos) / 161. + 1.) * 1. * iTime);
-            posRand.y = sin((noise(pos + 0.1) / 161. + 1.) * 1. * iTime);
-            posRand.z = sin((noise(pos + 0.2) / 161. + 1.) * 1. * iTime);
+            posRand.x = sin((noise(pos + seed) / 161. + 1.) * 1. * iTime);
+            posRand.y = sin((noise(pos + seed + 0.1) / 161. + 1.) * 1. * iTime);
+            posRand.z = sin((noise(pos + seed + 0.2) / 161. + 1.) * 1. * iTime);
             return posRand * posRand;
         }
         
@@ -219,39 +206,41 @@ THREE.LavaMat = new THREE.ShaderMaterial({
             if (distance(spot, vUv) < 0.005) {
             	gl_FragColor = vec4(multSpot(spot) * color , aVal);
             }
-            float dist = 1. / distance(spot, vUv);
+            float dist = 1. / (abs(spot - vUv).x * abs(spot - vUv).y);
             realMult += dist * multSpot(spot);
             div += dist;
             
             spot = vec2(floor(X) / pixVal, ceil(Y) / pixVal);
-            dist = 1. / distance(spot, vUv);
+            dist = 1. / (abs(spot - vUv).x * abs(spot - vUv).y);
             realMult += dist * multSpot(spot);
             div += dist;
             
             spot = vec2(ceil(X) / pixVal, floor(Y) / pixVal);
-            dist = 1. / distance(spot, vUv);
+            dist = 1. / (abs(spot - vUv).x * abs(spot - vUv).y);
             realMult += dist * multSpot(spot);
             div += dist;
             
             spot = vec2(ceil(X) / pixVal, ceil(Y) / pixVal);
-            dist = 1. / distance(spot, vUv);
+            dist = 1. / (abs(spot - vUv).x * abs(spot - vUv).y);
             realMult += dist * multSpot(spot);
             realMult /= div + dist;
             gl_FragColor = vec4((realMult * 0.333 + 0.667) * color , aMult * aVal);
 		}`
 });
 
-THREE.WaterMat = new THREE.ShaderMaterial({
+CustomShade.WaterShader = new THREE.ShaderMaterial({
 	uniforms: {
 		"color": { value: new THREE.Vector3() },
 		"aVal":  { value: 1.0 },
 		"iTime":  { value: 0.0 },
 		"nearClip":  { value: nearClip },
-		"farClip":  { value: farClip }
+		"farClip":  { value: farClip },
+        "seed": { value: 0.0 }
 	},
 
 	vertexShader:
 		`uniform float iTime;
+		uniform float seed;
         varying float depth;
         varying vec2 vUv;
         
@@ -262,11 +251,9 @@ THREE.WaterMat = new THREE.ShaderMaterial({
         
 		void main() {
             vec3 posRand = position;
-            //posRand.x += 1. * sin((noise(position.yz) / 161. + 1.) * 2. * iTime);
             posRand.y += 1. * sin((noise(position.yz) / 161. + 1.) * 2. * iTime);
-            //posRand.z += 1. * sin((noise(position.yz) / 161. + 1.) * 2. * iTime);
             depth = (modelViewMatrix * vec4(posRand, 1.)).z;
-			vUv = (projectionMatrix * modelViewMatrix * vec4(posRand, 1.)).xy;
+			vUv = (projectionMatrix * modelViewMatrix * vec4(posRand, 1.)).xy - seed;
 			gl_Position = projectionMatrix * modelViewMatrix * vec4(posRand, 1.);
 		}`,
 
@@ -274,6 +261,7 @@ THREE.WaterMat = new THREE.ShaderMaterial({
     	`#include <packing>
 		uniform vec3 color;
 		uniform float aVal;
+		uniform float seed;
         uniform float iTime;
 		uniform float nearClip;
 		uniform float farClip;
@@ -287,9 +275,9 @@ THREE.WaterMat = new THREE.ShaderMaterial({
         
         vec3 multSpot(vec2 pos) {
         	vec3 posRand;
-            posRand.x = sin((noise(pos) / 161. + 1.) * 1. * iTime);
-            posRand.y = sin((noise(pos + 0.1) / 161. + 1.) * 1. * iTime);
-            posRand.z = sin((noise(pos + 0.2) / 161. + 1.) * 1. * iTime);
+            posRand.x = sin((noise(pos + seed) / 161. + 1.) * 1. * iTime);
+            posRand.y = sin((noise(pos + seed + 0.1) / 161. + 1.) * 1. * iTime);
+            posRand.z = sin((noise(pos + seed + 0.2) / 161. + 1.) * 1. * iTime);
             return posRand * posRand;
         }
         
@@ -306,22 +294,22 @@ THREE.WaterMat = new THREE.ShaderMaterial({
             if (distance(spot, vUv) < 0.005) {
             	gl_FragColor = vec4(multSpot(spot) * color , aVal);
             }
-            float dist = 1. / distance(spot, vUv);
+            float dist = 1. / (abs(spot - vUv).x * abs(spot - vUv).y);
             realMult += dist * multSpot(spot);
             div += dist;
             
             spot = vec2(floor(X) / pixVal, ceil(Y) / pixVal);
-            dist = 1. / distance(spot, vUv);
+            dist = 1. / (abs(spot - vUv).x * abs(spot - vUv).y);
             realMult += dist * multSpot(spot);
             div += dist;
             
             spot = vec2(ceil(X) / pixVal, floor(Y) / pixVal);
-            dist = 1. / distance(spot, vUv);
+            dist = 1. / (abs(spot - vUv).x * abs(spot - vUv).y);
             realMult += dist * multSpot(spot);
             div += dist;
             
             spot = vec2(ceil(X) / pixVal, ceil(Y) / pixVal);
-            dist = 1. / distance(spot, vUv);
+            dist = 1. / (abs(spot - vUv).x * abs(spot - vUv).y);
             realMult += dist * multSpot(spot);
             realMult /= div + dist;
             gl_FragColor = vec4(vec3(1.) * realMult * 0.4 + 0.6 * color * (1. - realMult), 
@@ -330,7 +318,7 @@ THREE.WaterMat = new THREE.ShaderMaterial({
 });
 
 // Generates different shader materials depending on the 
-class AlphaShader {
+CustomShade.NormalMat = class {
 	constructor (r, g, b, a) {
     	//let newMat = new THREE.MeshBasicMaterial({ color: (new THREE.Color(r, g, b)).getHex() });
     	let newMat = THREE.NormMat.clone();
@@ -341,7 +329,7 @@ class AlphaShader {
         return newMat;
     }
 }
-class LavaShader {
+CustomShade.LavaMat = class {
 	constructor (r, g, b, a) {
     	let newMat = THREE.LavaMat.clone();
         newMat.uniforms.color.value = new THREE.Color(r, g, b);
@@ -351,7 +339,7 @@ class LavaShader {
         return newMat;
     }
 }
-class WaterShader {
+CustomShade.WaterMat = class {
 	constructor (r, g, b, a) {
     	let newMat = THREE.WaterMat.clone();
         newMat.uniforms.color.value = new THREE.Color(r, g, b);
@@ -363,7 +351,7 @@ class WaterShader {
 }
 
 // Generates an upright prism with the base defined by `vertices`
-PrismGeometry = function (vertices, height) {
+THREE.PrismGeometry = function (vertices, height) {
     let Shape = new THREE.Shape();
 
     (function (ctx) {
@@ -381,7 +369,7 @@ PrismGeometry = function (vertices, height) {
     this.rotateX(Math.PI / 2);
     this.translate(0, height / 2, 0);
 };
-PrismGeometry.prototype = Object.create(THREE.ExtrudeGeometry.prototype);
+THREE.PrismGeometry.prototype = Object.create(THREE.ExtrudeGeometry.prototype);
 
 
 // Initializes the WebGL renderer
@@ -414,7 +402,7 @@ function glInit() {
 	glComposer.addPass(new THREE.RenderPass(glScene, glCamera));
     
     // Initialize the post-render edge detection shader pass
-    EDShaderPass = new THREE.ShaderPass(THREE.EdgeDetect);
+    EDShaderPass = new THREE.ShaderPass(CustomShade.EdgeDetect);
     EDShaderPass.renderToScreen = true;
     EDShaderPass.uniforms.resolution.value.x = width;
     EDShaderPass.uniforms.resolution.value.y = height;
