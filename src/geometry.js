@@ -2,13 +2,10 @@
 ////     A class that handles the three.js geometry of rectangular prisms;
 ////     The interface of Math4D and three.js
 
-var Box;
-
-//
+// a constant by which the coordinates and dimensions of all boxes are multiplied
 const coScale = 2 * 10;
-
-Box = class {
-	constructor (x, y, z, w, sx, sy, sz, sw, r = 1, g = 0, b = 0) {
+var Box = class {
+	constructor (x, y, z, w, sx, sy, sz, sw, r = 1, g = 0, b = 0, isolate = false) {
     	this.x = coScale * x; this.y = coScale * y;
         this.z = coScale * z; this.w = coScale * w;
         this.sx = coScale * sx; this.sy = coScale * sy;
@@ -16,6 +13,10 @@ Box = class {
         this.__W__ = null;
         this.__SX__ = this.__SY__ = this.__SZ__ = null;
         this.r = r; this.g = g; this.b = b;
+		if (!isolate) {
+			this.addObject();
+		}
+		return this;
     }
     addObject() {
     	Box.list.push(this);
@@ -40,8 +41,8 @@ Box = class {
         Box.meshList[this.ind].position.y = point.y;
         Box.meshList[this.ind].position.z = point.z;
         // Set the 2D rotation of the geometry
-        Box.meshList[this.ind].rotation.y = Math.PI * cam.axz / 2;
-        if (cam.transxzw) {
+        Box.meshList[this.ind].rotation.y = Math.PI * Math4D.cam.axz / 2;
+        if (Math4D.cam.transxzw) {
             this.__SX__ = this.__SY__ = this.__SZ__ = null;
         	Box.meshList[this.ind].geometry = Box.generate3DRotGeo(dim);
         } else {
@@ -55,7 +56,7 @@ Box = class {
         }
         if (this.__W__ !== point.w) {
         	this.__W__ = point.w;
-            let op =  wToAlpha(point.w, dim.w);
+            let op =  Math4D.depthToOp(point.w, dim.w);
             Box.meshList[this.ind].material.opacity = op;
             // Do not write to depth (i.e. do not outline) if the player cannot interact with the geometry
             if (op < 1) {
@@ -71,7 +72,7 @@ Box = class {
     }
     
     static generate3DRotGeo(dim) {
-        if (cam.swapxz) {
+        if (Math4D.cam.swapxz) {
         	let __temp = dim.z;
         	dim.z = dim.x;
             dim.x = __temp;
@@ -86,5 +87,6 @@ Box = class {
     }
 }
 
+// Global list that contain all instances of Boxes and three.js meshes
 Box.list = [];
 Box.meshList = [];
