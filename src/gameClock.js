@@ -4,7 +4,7 @@
 
 var gameClock = {};
 
-gameClock.FPS = 30; gameClock.DT = 1000 / FPS;
+gameClock.FPS = 30; gameClock.DT = 1000 / gameClock.FPS;
 gameClock.run = function () {
 	Keys.update();
     Math4D.runRotations();
