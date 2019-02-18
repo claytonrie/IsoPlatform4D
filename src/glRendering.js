@@ -321,34 +321,34 @@ CustomShade.WaterShader = new THREE.ShaderMaterial({
 CustomShade.NormalMat = class {
 	constructor (r, g, b, a) {
     	//let newMat = new THREE.MeshBasicMaterial({ color: (new THREE.Color(r, g, b)).getHex() });
-    	let newMat = THREE.NormMat.clone();
+    	let newMat = CustomShade.NormalSahder.clone();
         newMat.uniforms.color.value = new THREE.Color(r, g, b);
         newMat.needTime = false;
         newMat.transparent = true;
         newMat.opacity = a;
         return newMat;
     }
-}
+};
 CustomShade.LavaMat = class {
 	constructor (r, g, b, a) {
-    	let newMat = THREE.LavaMat.clone();
+    	let newMat = CustomShade.LavaShader.clone();
         newMat.uniforms.color.value = new THREE.Color(r, g, b);
         newMat.needTime = true;
         newMat.transparent = true;
         newMat.opacity = a;
         return newMat;
     }
-}
+};
 CustomShade.WaterMat = class {
 	constructor (r, g, b, a) {
-    	let newMat = THREE.WaterMat.clone();
+    	let newMat = CustomShade.WaterShader.clone();
         newMat.uniforms.color.value = new THREE.Color(r, g, b);
         newMat.needTime = true;
         newMat.transparent = true;
         newMat.opacity = a;
         return newMat;
     }
-}
+};
 
 // Generates an upright prism with the base defined by `vertices`
 THREE.PrismGeometry = function (vertices, height) {
