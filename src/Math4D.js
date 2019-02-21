@@ -122,7 +122,7 @@ Math4D.generateCubeProj = function (dim) {
 //     w-depth and thus non-interactable
 Math4D.depthToOp = function (w, sw) {
     const endPoint = 5;
-    let X = ((Math.abs(w) - sw - PL_SZ) / (endPoint * coScale));
+    let X = ((Math.abs(w) - sw - 10) / (endPoint * coScale));
     if (X <= 0) {
         return 1;
     } else if (X >= 1) {
