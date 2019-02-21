@@ -77,7 +77,7 @@ var Box = class {
             dim.z = dim.x;
             dim.x = __temp;
         }
-        return new PrismGeometry(Math4D.generateCubeProj(dim), dim.y);
+        return new THREE.PrismGeometry(Math4D.generateCubeProj(dim), dim.y);
     }
     static updateAll() {
         let i = Box.list.length - 1;
