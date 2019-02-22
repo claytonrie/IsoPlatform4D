@@ -320,7 +320,7 @@ CustomShade.WaterShader = new THREE.ShaderMaterial({
 CustomShade.NormalMat = class {
     constructor (r, g, b, a) {
         //let newMat = new THREE.MeshBasicMaterial({ color: (new THREE.Color(r, g, b)).getHex() });
-        let newMat = CustomShade.NormalSahder.clone();
+        let newMat = CustomShade.NormalShader.clone();
         newMat.uniforms.color.value = new THREE.Color(r, g, b);
         newMat.needTime = false;
         newMat.transparent = true;
