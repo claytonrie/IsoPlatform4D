@@ -412,10 +412,10 @@ function glInit() {
 }
 
 // Function to render the current scene 
-function glRender() {
+function glRender(dt, tt) {
     // Update the depth texture to use in the edge dectection pass
     EDShaderPass.uniforms.tDepth.value = glRenderTarget.depthTexture;
-    EDShaderPass.uniforms.iTime.value = glClock.getElapsedTime() % 500;
+    EDShaderPass.uniforms.iTime.value = tt % 500;
     // Render the scene
     glComposer.render();
 }
