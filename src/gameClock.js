@@ -6,7 +6,7 @@ var gameClock = {};
 
 gameClock.dt = gameClock.time = 0;
 gameClock.__FPS__ = 30; 
-gameClock.__DT__ = 1000 / gameClock.FPS;
+gameClock.__DT__ = 1000 / gameClock.__FPS__;
 gameClock.__ID__ = null;
 gameClock.run = function () {
     // Calculate change in time and total time
