@@ -9,11 +9,13 @@ gameClock.__FPS__ = 30;
 gameClock.__DT__ = 1000 / gameClock.FPS;
 gameClock.__ID__ = null;
 gameClock.run = function () {
+    // Calculate change in time and total time
     gameClock.dt = glClock.getDelta();
     gameClock.time = glClock.getElasped();
-    Keys.update(gameClock.dt);
-    Math4D.runRotations(gameClock.dt);
-    Box.updateAll(gameClock.dt);
+    
+    Keys.update(gameClock.dt, gameClock.time);
+    Math4D.runRotations(gameClock.dt, gameClock.time);
+    Box.updateAll(gameClock.dt, gameClock.time);
     glRender(gameClock.dt, gameClock.time);
 };
 
