@@ -11,7 +11,7 @@ gameClock.__ID__ = null;
 gameClock.run = function () {
     // Calculate change in time and total time
     gameClock.dt = glClock.getDelta();
-    gameClock.time = glClock.getElasped();
+    gameClock.time = glClock.getElapsedTime();
     
     Keys.update(gameClock.dt, gameClock.time);
     Math4D.runRotations(gameClock.dt, gameClock.time);
