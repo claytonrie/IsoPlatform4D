@@ -33,7 +33,7 @@ var Box = class {
         return this;
     }
     
-    updateGeo () {
+    updateGeo (dt, tt) {
         let point = Math4D.pointTo3D( this.x,  this.y,  this.z,  this.w);
         let dim   = Math4D.  dimTo3D(this.sx, this.sy, this.sz, this.sw);
         // Set the position of the geometry
@@ -66,7 +66,7 @@ var Box = class {
             }
         }
         if (Box.meshList[this.ind].material.needTime) {
-            Box.meshList[this.ind].material.uniforms.iTime.value = glClock.getElapsedTime() % 500;
+            Box.meshList[this.ind].material.uniforms.iTime.value = tt % 500;
         }
         return this;
     }
@@ -79,10 +79,10 @@ var Box = class {
         }
         return new THREE.PrismGeometry(Math4D.generateCubeProj(dim), dim.y);
     }
-    static updateAll() {
+    static updateAll(dt, tt) {
         let i = Box.list.length - 1;
         for (; i >= 0; i -= 1) {
-            Box.list[i].updateGeo();
+            Box.list[i].updateGeo(dt, tt);
         }
     }
 }

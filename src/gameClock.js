@@ -4,19 +4,24 @@
 
 var gameClock = {};
 
-gameClock.FPS = 30; 
-gameClock.DT = 1000 / gameClock.FPS;
+gameClock.dt = gameClock.time = 0;
+gameClock.__FPS__ = 30; 
+gameClock.__DT__ = 1000 / gameClock.FPS;
 gameClock.__ID__ = null;
 gameClock.run = function () {
-    Keys.update();
-    Math4D.runRotations();
-    Box.updateAll();
-    glRender();
+    // Calculate change in time and total time
+    gameClock.dt = glClock.getDelta();
+    gameClock.time = glClock.getElasped();
+    
+    Keys.update(gameClock.dt, gameClock.time);
+    Math4D.runRotations(gameClock.dt, gameClock.time);
+    Box.updateAll(gameClock.dt, gameClock.time);
+    glRender(gameClock.dt, gameClock.time);
 };
 
 gameClock.start = function () {
     if (gameClock.__ID__ === null) {
-        gameClock.__ID__ = setInterval(gameClock.run, gameClock.DT);
+        gameClock.__ID__ = setInterval(gameClock.run, gameClock.__DT__);
     } else {
         throw new Error("Attempted to start game clock when it was already running");
     }
