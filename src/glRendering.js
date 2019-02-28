@@ -159,13 +159,14 @@ CustomShade.LavaShader = new THREE.ShaderMaterial({
         }
         
         void main() {
-            vec3 posRand = position;
-            posRand.x += sin((noise(position.yz) / 161. + 1.) * 2. * iTime);
-            posRand.y += sin((noise(position.xz) / 161. + 1.) * 2. * iTime);
-            posRand.z += sin((noise(position.xy) / 161. + 1.) * 2. * iTime);
-            depth = (modelViewMatrix * vec4(posRand, 1.)).z;
-            vUv = (projectionMatrix * modelViewMatrix * vec4(posRand, 1.)).xy;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(posRand, 1.);
+            vec4 posRand = modelViewMatrix * vec4(position, 1.);
+            vec4 posConst = posRand;
+            posRand.x += sin((noise(posConst.yz) / 161. + 1.) * 2. * iTime);
+            posRand.y += sin((noise(posConst.xz) / 161. + 1.) * 2. * iTime);
+            posRand.z += sin((noise(posConst.xy) / 161. + 1.) * 2. * iTime);
+            depth = (posRand).z;
+            vUv = (projectionMatrix * posRand).xy;
+            gl_Position = projectionMatrix * posRand;
         }`,
 
     fragmentShader: 
